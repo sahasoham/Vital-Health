@@ -1,0 +1,177 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: waitlist
+    description: Waitlist operations
+  - name: demo
+    description: Demo request operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /waitlist:
+    post:
+      operationId: joinWaitlist
+      tags: [waitlist]
+      summary: Join the waitlist
+      description: Submit an email address to join the waitlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WaitlistEntry"
+      responses:
+        "201":
+          description: Successfully joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WaitlistResult"
+        "409":
+          description: Email already on waitlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /demo:
+    post:
+      operationId: requestDemo
+      tags: [demo]
+      summary: Request a demo
+      description: Submit contact info and calculator results to request a demo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoRequest"
+      responses:
+        "201":
+          description: Demo request submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /waitlist/count:
+    get:
+      operationId: getWaitlistCount
+      tags: [waitlist]
+      summary: Get waitlist count
+      description: Returns total number of people on the waitlist
+      responses:
+        "200":
+          description: Waitlist count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WaitlistCount"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    WaitlistEntry:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: ["string", "null"]
+        childAge:
+          type: ["string", "null"]
+
+    WaitlistResult:
+      type: object
+      required: [success, message, position]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        position:
+          type: integer
+
+    WaitlistCount:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+
+    DemoRequest:
+      type: object
+      required: [name, email, institution, calculatedUpside, inputs]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        institution:
+          type: string
+        jobTitle:
+          type: ["string", "null"]
+        calculatedUpside:
+          type: number
+        inputs:
+          type: object
+          additionalProperties: true
+
+    DemoResult:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
