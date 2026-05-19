@@ -1,24 +1,14 @@
-/// <reference lib="dom" />
-// Vercel serverless function — replaces Express POST /api/demo
+// Vercel edge function — POST /api/demo
 // Writes to Google Sheets via Apps Script webhook + sends detailed Resend email
-
-declare const process: { env: Record<string, string | undefined> };
 
 export const runtime = 'edge';
 
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(req) {
   if (req.method !== 'POST') {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
-  let body: {
-    name?: string;
-    email?: string;
-    institution?: string;
-    jobTitle?: string | null;
-    calculatedUpside?: number;
-    inputs?: Record<string, unknown>;
-  };
+  let body;
   try {
     body = await req.json();
   } catch {
@@ -34,9 +24,9 @@ export default async function handler(req: Request): Promise<Response> {
     ? `$${Math.round(calculatedUpside).toLocaleString()}`
     : '—';
 
-  const tasks: Promise<unknown>[] = [];
+  const tasks = [];
 
-  // ── 1. Write to Google Sheets ──────────────────────────────────────────────
+  // 1. Write to Google Sheets
   const sheetsUrl = process.env.SHEETS_WEBHOOK_URL;
   if (sheetsUrl) {
     tasks.push(
@@ -52,15 +42,14 @@ export default async function handler(req: Request): Promise<Response> {
           calculatedUpside: calculatedUpside ?? 0,
         }),
         redirect: 'follow',
-      }).catch(() => { /* non-fatal */ })
+      }).catch(() => {})
     );
   }
 
-  // ── 2. Send admin notification email via Resend ────────────────────────────
+  // 2. Send admin notification email via Resend
   const resendKey = process.env.RESEND_API_KEY;
   const adminEmail = process.env.ADMIN_EMAIL;
   if (resendKey && adminEmail) {
-    // Build a readable inputs summary
     const inputRows = inputs
       ? Object.entries(inputs)
           .map(([k, v]) => `<tr><td style="padding:4px 16px 4px 0;color:#6B7280;text-transform:capitalize">${k.replace(/_/g, ' ')}</td><td>${v}</td></tr>`)
@@ -85,13 +74,13 @@ export default async function handler(req: Request): Promise<Response> {
               <tr><td style="padding:6px 16px 6px 0;color:#6B7280">Email</td><td><strong>${email}</strong></td></tr>
               <tr><td style="padding:6px 16px 6px 0;color:#6B7280">Institution</td><td><strong>${institution}</strong></td></tr>
               <tr><td style="padding:6px 16px 6px 0;color:#6B7280">Job Title</td><td>${jobTitle || '—'}</td></tr>
-              <tr><td style="padding:6px 16px 6px 0;color:#6B7280">Calculated Upside</td><td style="color:#7C3AED;font-weight:700;font-size:1.1em">${upsideFormatted}</td></tr>
+              <tr><td style="padding:6px 16px 6px 0;color:#6B7280">Calculated Upside</td><td style="color:#7C3AED;font-weight:700">${upsideFormatted}</td></tr>
               <tr><td style="padding:6px 16px 6px 0;color:#6B7280">Time</td><td>${new Date().toUTCString()}</td></tr>
             </table>
             ${inputRows ? `<h3 style="color:#1E1B4B">Calculator Inputs</h3><table style="border-collapse:collapse;font-family:sans-serif">${inputRows}</table>` : ''}
           `,
         }),
-      }).catch(() => { /* non-fatal */ })
+      }).catch(() => {})
     );
   }
 
