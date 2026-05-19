@@ -1,5 +1,8 @@
+/// <reference lib="dom" />
 // Vercel serverless function — replaces Express POST /api/waitlist
 // Writes to Google Sheets via Apps Script webhook + sends Resend email
+
+declare const process: { env: Record<string, string | undefined> };
 
 export const runtime = 'edge';
 

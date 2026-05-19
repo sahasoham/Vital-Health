@@ -1,5 +1,8 @@
+/// <reference lib="dom" />
 // Vercel serverless function — replaces Express GET /api/waitlist/count
 // Reads the row count from Google Sheets via Apps Script webhook
+
+declare const process: { env: Record<string, string | undefined> };
 
 export const runtime = 'edge';
 
